@@ -50,7 +50,7 @@ func main() {
 		BcPay.Steps(inAccount, profit, increment)
 
 	default:
-		log.Fatal("unknown commandd")
+		log.Fatal("unknown command")
 	}
 
 }
