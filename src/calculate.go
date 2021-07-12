@@ -35,7 +35,7 @@ func InDays(inAccount, targetDay float64) string {
 		endCapital = i
 		targetDay--
 	}
-	return fmt.Sprintf("your capital in account will be %d that is a total of %f increase", int(endCapital), endCapital-inAccount)
+	return fmt.Sprintf("Final capital:\t%d\nincrease:\t%f", int(endCapital), endCapital-inAccount)
 }
 
 func Steps(inAccount, target, increment float64) {
@@ -85,7 +85,7 @@ func Logger(logs string) {
 		}
 
 		err2 = file.Sync()
-		if err2 != nil{
+		if err2 != nil {
 			log.Fatal(err2)
 		}
 	}
