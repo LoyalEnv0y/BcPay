@@ -30,7 +30,6 @@ func main() {
 			log.Fatal(err2)
 		}
 		fmt.Printf("%s\n\n", BcPay.InProfit(inAccount, profit))
-
 	case 2:
 		fmt.Println("please enter CAPITAL IN ACCOUNT and DAY COUNT you want to reach")
 
@@ -39,7 +38,6 @@ func main() {
 			log.Fatal(err3)
 		}
 		fmt.Printf("%s\n", BcPay.InDays(inAccount, targetDay*20))
-
 	case 3:
 		fmt.Println("Please type CAPITAL, TARGET and INCREMENTER")
 
@@ -48,7 +46,6 @@ func main() {
 			log.Fatal(err4)
 		}
 		BcPay.Steps(inAccount, profit, increment)
-
 	default:
 		log.Fatal("unknown command")
 	}
