@@ -1,11 +1,10 @@
 package BcPay
 
 import (
+	"database/sql"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"log"
-	"os"
-	"strings"
-	"time"
 )
 
 const fundamental float64 = 500
@@ -21,12 +20,12 @@ func InProfit(inAccount, targetProfit float64) string {
 		totalOrders++
 	}
 
-	return fmt.Sprintf("Order count:\t%d\nDay count:\t%f", int(totalOrders), totalOrders/15)
+	return fmt.Sprintf("Order count:\t%d\nDay count:\t%f\nFinal capital:\t%d", int(totalOrders), totalOrders/15, int(inAccount+targetProfit))
 }
 
-func InDays(inAccount, targetDay float64) string {
+func InDays(inAccount, targetDay float64, database bool) (string, float64) {
 	if targetDay < 1 || inAccount < fundamental {
-		return fmt.Sprintf("ERROR: target day is lower than 1 OR capital in account is less then fundamental [%f]", fundamental)
+		return fmt.Sprintf("ERROR: target day is lower than 1 OR capital in account is less then fundamental [%f]", fundamental), 0
 	}
 
 	var endCapital float64
@@ -35,60 +34,36 @@ func InDays(inAccount, targetDay float64) string {
 		endCapital = i
 		targetDay--
 	}
-	return fmt.Sprintf("Final capital:\t%d\nincrease:\t%f", int(endCapital), endCapital-inAccount)
+
+	if database {
+		return "", endCapital
+	}
+
+	return fmt.Sprintf("Final capital:\t%d\nincrease:\t%f", int(endCapital), endCapital-inAccount), 0
 }
 
-func Steps(inAccount, target, increment float64) {
-	var (
-		step    int
-		logs    string
-		saveLog string
-	)
+func DataRecorder(inAccount float64) {
+	_, endCapital := InDays(inAccount, 15, true)
 
-	for target > inAccount {
-		logs += fmt.Sprintf("step [%d] \t↓\n%s\ntarget: \t%f\n\n", step, InProfit(inAccount, increment), inAccount+increment)
-		inAccount += increment
-		step++
-	}
-	saveLog = strings.Trim(saveLog, "\n")
-	fmt.Print(logs)
-
-	fmt.Println("do you want to save them into a file? Y/N")
-	_, err := fmt.Scanf("%s\n", &saveLog)
+	db, err := sql.Open("mysql", "root:Ct145353.@tcp(127.0.0.1:3306)/bcpay")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err.Error())
 	}
-	if saveLog == "Y" || saveLog == "y" {
-		Logger(logs)
+	defer func(db *sql.DB) {
+		err2 := db.Close()
+		if err2 != nil {
+			log.Fatal(err2.Error())
+		}
+	}(db)
+
+	insert, err3 := db.Query("INSERT INTO records (started, target) VALUES(?,?)", inAccount, endCapital)
+	if err3 != nil {
+		log.Fatal(err3.Error())
 	}
-}
-
-func Logger(logs string) {
-	var (
-		timeStamp = time.Now().Format("02-Jan-06 15-04-05")
-		raw       = "C:\\Users\\cetin\\Desktop\\Logs\\"
-		path      = raw + timeStamp + ".txt"
-	)
-
-	_, err := os.Stat(path)
-
-	if os.IsNotExist(err) {
-		file, err2 := os.Create(path)
-		if err2 != nil {
-			log.Fatal(err2)
+	defer func(db *sql.DB) {
+		err4 := insert.Close()
+		if err4 != nil {
+			log.Fatal(err4.Error())
 		}
-		defer file.Close()
-
-		_, err2 = file.WriteString(logs)
-		if err2 != nil {
-			log.Fatal(err2)
-		}
-
-		err2 = file.Sync()
-		if err2 != nil {
-			log.Fatal(err2)
-		}
-	}
-
-	fmt.Printf("Created and saved file at %s in %s\n", timeStamp, raw)
+	}(db)
 }
