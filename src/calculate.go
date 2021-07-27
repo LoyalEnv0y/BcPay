@@ -17,11 +17,11 @@ func InProfit(inAccount, targetProfit float64) string {
 
 	var totalOrders float64
 
-	for i := inAccount; i < targetProfit+inAccount; i += (0.2 / 100) * i {
+	for i := inAccount; i < targetProfit+inAccount; i += (0.22 / 100) * i {
 		totalOrders++
 	}
 
-	return fmt.Sprintf("Order count:\t%d\nDay count:\t%f", int(totalOrders), totalOrders/20)
+	return fmt.Sprintf("Order count:\t%d\nDay count:\t%f", int(totalOrders), totalOrders/15)
 }
 
 func InDays(inAccount, targetDay float64) string {
@@ -31,7 +31,7 @@ func InDays(inAccount, targetDay float64) string {
 
 	var endCapital float64
 
-	for i := inAccount; targetDay >= 0; i += (0.2 / 100) * i {
+	for i := inAccount; targetDay >= 0; i += (0.22 / 100) * i {
 		endCapital = i
 		targetDay--
 	}

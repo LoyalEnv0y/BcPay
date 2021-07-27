@@ -37,7 +37,7 @@ func main() {
 		if err3 != nil {
 			log.Fatal(err3)
 		}
-		fmt.Printf("%s\n", BcPay.InDays(inAccount, targetDay*20))
+		fmt.Printf("%s\n", BcPay.InDays(inAccount, targetDay*15))
 	case 3:
 		fmt.Println("Please type CAPITAL, TARGET and INCREMENTER")
 
