@@ -9,28 +9,28 @@ import (
 
 const fundamental float64 = 500
 
-func InProfit(inAccount, targetProfit float64) string {
-	if inAccount < fundamental {
-		return fmt.Sprintf("ERROR: your capital => %f is lower than standard needed limit => %f", inAccount, fundamental)
+func InProfit(capital, targetProfit, interestRate, dailyOrders float64) string {
+	if capital < fundamental {
+		return fmt.Sprintf("ERROR: your capital => %f is lower than standard needed limit => %f", capital, fundamental)
 	}
 
 	var totalOrders float64
 
-	for i := inAccount; i < targetProfit+inAccount; i += (0.22 / 100) * i {
+	for i := capital; i < targetProfit+capital; i += (interestRate / 100) * i {
 		totalOrders++
 	}
 
-	return fmt.Sprintf("Order count:\t%d\nDay count:\t%f\nFinal capital:\t%d", int(totalOrders), totalOrders/15, int(inAccount+targetProfit))
+	return fmt.Sprintf("Order count:\t%d\nDay count:\t%f\nFinal capital:\t%d", int(totalOrders), totalOrders/dailyOrders, int(capital+targetProfit))
 }
 
-func InDays(inAccount, targetDay float64, database bool) (string, float64) {
+func InDays(inAccount, targetDay, interestRate float64, database bool) (string, float64) {
 	if targetDay < 1 || inAccount < fundamental {
 		return fmt.Sprintf("ERROR: target day is lower than 1 OR capital in account is less then fundamental [%f]", fundamental), 0
 	}
 
 	var endCapital float64
 
-	for i := inAccount; targetDay >= 0; i += (0.22 / 100) * i {
+	for i := inAccount; targetDay >= 0; i += (interestRate / 100) * i {
 		endCapital = i
 		targetDay--
 	}
@@ -42,8 +42,8 @@ func InDays(inAccount, targetDay float64, database bool) (string, float64) {
 	return fmt.Sprintf("Final capital:\t%d\nincrease:\t%f", int(endCapital), endCapital-inAccount), 0
 }
 
-func DataRecorder(inAccount float64) {
-	_, endCapital := InDays(inAccount, 15, true)
+func DataRecorder(inAccount, interestRate float64) {
+	_, endCapital := InDays(inAccount, 14, interestRate, true)
 
 	db, err := sql.Open("mysql", "root:Ct145353.@tcp(127.0.0.1:3306)/bcpay")
 	if err != nil {
@@ -56,7 +56,7 @@ func DataRecorder(inAccount float64) {
 		}
 	}(db)
 
-	insert, err3 := db.Query("INSERT INTO records (started, target) VALUES(?,?)", inAccount, endCapital)
+	insert, err3 := db.Query("INSERT INTO records (started, target, daily_gain) VALUES(?,?, CONCAT(? - ?, '$'))", inAccount, endCapital, int(endCapital), int(inAccount))
 	if err3 != nil {
 		log.Fatal(err3.Error())
 	}
