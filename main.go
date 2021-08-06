@@ -12,7 +12,7 @@ func main() {
 		targetProfit float64
 		targetDay    float64
 		interestRate = 0.22
-		dailyOrders  = 14.0
+		dailyOrders  = 13.0
 		function     int
 	)
 
@@ -47,7 +47,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		BcPay.DataRecorder(capital, interestRate)
+		BcPay.DataRecorder(capital, interestRate, dailyOrders)
 		fmt.Println("Successfully inserted into database")
 	default:
 		log.Fatal("unknown command")
