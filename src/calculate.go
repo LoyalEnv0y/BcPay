@@ -42,8 +42,8 @@ func InDays(inAccount, targetDay, interestRate float64, database bool) (string, 
 	return fmt.Sprintf("Final capital:\t%d\nincrease:\t%f", int(endCapital), endCapital-inAccount), 0
 }
 
-func DataRecorder(inAccount, interestRate float64) {
-	_, endCapital := InDays(inAccount, 14, interestRate, true)
+func DataRecorder(inAccount, interestRate, dailyOrders float64) {
+	_, endCapital := InDays(inAccount, dailyOrders, interestRate, true)
 
 	db, err := sql.Open("mysql", "root:Ct145353.@tcp(127.0.0.1:3306)/bcpay")
 	if err != nil {
@@ -56,7 +56,7 @@ func DataRecorder(inAccount, interestRate float64) {
 		}
 	}(db)
 
-	insert, err3 := db.Query("INSERT INTO records (started, target, daily_gain) VALUES(?,?, CONCAT(? - ?, '$'))", inAccount, endCapital, int(endCapital), int(inAccount))
+	insert, err3 := db.Query("INSERT INTO records (started, target, daily_gain) VALUES(?,?, CONCAT(? - ?, '$'))", inAccount, int(endCapital), int(endCapital), int(inAccount))
 	if err3 != nil {
 		log.Fatal(err3.Error())
 	}
