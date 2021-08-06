@@ -2,48 +2,78 @@ package BcPay
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
 )
 
+type Data struct {
+	Capital      float64
+	Profit       float64
+	Day          float64
+	InterestRate float64
+	DailyOrders  float64
+	TotalOrders  float64
+	function     int
+}
+
 const fundamental float64 = 500
 
-func InProfit(capital, targetProfit, interestRate, dailyOrders float64) string {
-	if capital < fundamental {
-		return fmt.Sprintf("ERROR: your capital => %f is lower than standard needed limit => %f", capital, fundamental)
+var (
+	lowCapital  = errors.New(fmt.Sprintf("Your capital in account is lower then standard needed limit => %f", fundamental))
+	lowDayCount = errors.New(fmt.Sprintf("target day is lower than 1 OR capital in account is less then fundamental [%f]", fundamental))
+)
+
+func Init(capitalInAccount, targetProfit, targetDay float64) Data {
+	customer := Data{
+		Capital:      capitalInAccount,
+		Profit:       targetProfit,
+		Day:          targetDay,
+		InterestRate: 0.22,
+		DailyOrders:  13.0,
 	}
 
-	var totalOrders float64
-
-	for i := capital; i < targetProfit+capital; i += (interestRate / 100) * i {
-		totalOrders++
-	}
-
-	return fmt.Sprintf("Order count:\t%d\nDay count:\t%f\nFinal capital:\t%d", int(totalOrders), totalOrders/dailyOrders, int(capital+targetProfit))
+	return customer
 }
 
-func InDays(inAccount, targetDay, interestRate float64, database bool) (string, float64) {
-	if targetDay < 1 || inAccount < fundamental {
-		return fmt.Sprintf("ERROR: target day is lower than 1 OR capital in account is less then fundamental [%f]", fundamental), 0
+func InProfit(customer *Data) error {
+	if customer.Capital < fundamental {
+		return lowCapital
 	}
 
-	var endCapital float64
-
-	for i := inAccount; targetDay >= 0; i += (interestRate / 100) * i {
-		endCapital = i
-		targetDay--
+	for i := customer.Capital; i < customer.Profit+customer.Capital; i += (customer.InterestRate / 100) * i {
+		customer.TotalOrders++
 	}
-
-	if database {
-		return "", endCapital
-	}
-
-	return fmt.Sprintf("Final capital:\t%d\nincrease:\t%f", int(endCapital), endCapital-inAccount), 0
+	return nil
 }
 
-func DataRecorder(inAccount, interestRate, dailyOrders float64) {
-	_, endCapital := InDays(inAccount, dailyOrders, interestRate, true)
+func InDays(customer *Data) (float64, error) {
+	if customer.Day < 1 {
+		return 0, lowDayCount
+	} else if customer.Capital < fundamental {
+		return 0, lowCapital
+	}
+
+	adjusted := customer.Day * customer.DailyOrders
+	startingCapital := customer.Capital
+
+	for i := customer.Capital; adjusted >= 0; i += (customer.InterestRate / 100) * i {
+		adjusted--
+		customer.Capital = i
+	}
+	return startingCapital, nil
+}
+
+func DataRecorder(customer *Data) error {
+	if customer.Capital < fundamental {
+		return lowCapital
+	}
+
+	startingCapital, err := InDays(customer)
+	if err != nil {
+		return err
+	}
 
 	db, err := sql.Open("mysql", "root:Ct145353.@tcp(127.0.0.1:3306)/bcpay")
 	if err != nil {
@@ -56,7 +86,7 @@ func DataRecorder(inAccount, interestRate, dailyOrders float64) {
 		}
 	}(db)
 
-	insert, err3 := db.Query("INSERT INTO records (started, target, daily_gain) VALUES(?,?, CONCAT(? - ?, '$'))", inAccount, int(endCapital), int(endCapital), int(inAccount))
+	insert, err3 := db.Query("INSERT INTO records (started, target, daily_gain) VALUES(?,?, CONCAT(? - ?, '$'))", startingCapital, int(customer.Capital), int(customer.Capital), int(startingCapital))
 	if err3 != nil {
 		log.Fatal(err3.Error())
 	}
@@ -66,4 +96,17 @@ func DataRecorder(inAccount, interestRate, dailyOrders float64) {
 			log.Fatal(err4.Error())
 		}
 	}(db)
+	return nil
+}
+
+func Stringer(function int, customer Data, startingCapital float64) string {
+	switch function {
+	case 1:
+		return fmt.Sprintf("Order count:\t%d\nDay count:\t%f\nFinal capital:\t%d", int(customer.TotalOrders), customer.TotalOrders/customer.DailyOrders, int(customer.Capital+customer.Profit))
+	case 2:
+		return fmt.Sprintf("Final capital:\t%d\nincrease:\t%f", int(customer.Capital), customer.Capital-startingCapital)
+	case 3:
+		return fmt.Sprintf("Successfully inserted into database")
+	}
+	return ""
 }
