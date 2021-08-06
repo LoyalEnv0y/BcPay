@@ -1,7 +1,7 @@
 package main
 
 import (
-	BcPay "main.go/src"
+	BcPay "github.com/LoyalEnv0y/BcPay/src"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-module main.go
+module github.com/LoyalEnv0y/BcPay
 
 go 1.16
 
