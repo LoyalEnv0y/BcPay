@@ -75,7 +75,7 @@ func DataRecorder(customer *Data) error {
 		return err
 	}
 
-	db, err := sql.Open("mysql", "root:Ct145353.@tcp(127.0.0.1:3306)/bcpay")
+	db, err := sql.Open("mysql", "root:testPassword@tcp(127.0.0.1:3306)/bcpay")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
